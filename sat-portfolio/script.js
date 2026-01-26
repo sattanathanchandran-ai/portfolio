@@ -16,18 +16,60 @@ window.addEventListener('scroll', () => {
     }
 });
 
+// Function to toggle mobile menu
+function toggleMobileMenu(open) {
+    if (open === undefined) {
+        open = !navMenu.classList.contains('active');
+    }
+    
+    if (open) {
+        navMenu.classList.add('active');
+        hamburger.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent body scroll
+        hamburger.setAttribute('aria-expanded', 'true');
+    } else {
+        navMenu.classList.remove('active');
+        hamburger.classList.remove('active');
+        document.body.style.overflow = ''; // Restore body scroll
+        hamburger.setAttribute('aria-expanded', 'false');
+    }
+}
+
 // Mobile menu toggle
-hamburger.addEventListener('click', () => {
-    navMenu.classList.toggle('active');
-    hamburger.classList.toggle('active');
+hamburger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMobileMenu();
 });
 
 // Close mobile menu when clicking on a link
 navLinks.forEach(link => {
     link.addEventListener('click', () => {
-        navMenu.classList.remove('active');
-        hamburger.classList.remove('active');
+        toggleMobileMenu(false);
     });
+});
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+    if (navMenu.classList.contains('active') && 
+        !navMenu.contains(e.target) && 
+        !hamburger.contains(e.target)) {
+        toggleMobileMenu(false);
+    }
+});
+
+// Close mobile menu on escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+        toggleMobileMenu(false);
+        hamburger.focus();
+    }
+});
+
+// Close mobile menu on window resize (if desktop size)
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
+        toggleMobileMenu(false);
+    }
 });
 
 // Active nav link on scroll
@@ -210,27 +252,32 @@ function showNotification(message, type = 'info') {
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
     
-    // Add styles
+    // Check if mobile
+    const isMobile = window.innerWidth <= 768;
+    
+    // Add styles - centered on mobile, right-aligned on desktop
     notification.style.cssText = `
         position: fixed;
-        top: 100px;
-        right: 20px;
+        top: ${isMobile ? '80px' : '100px'};
+        ${isMobile ? 'left: 50%; transform: translateX(-50%);' : 'right: 20px;'}
         background: ${type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#3182ce'};
         color: white;
         padding: 16px 24px;
         border-radius: 8px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         z-index: 10000;
-        animation: slideInRight 0.3s ease;
-        max-width: 300px;
+        animation: ${isMobile ? 'slideInDown' : 'slideInRight'} 0.3s ease;
+        max-width: ${isMobile ? 'calc(100% - 40px)' : '300px'};
+        width: ${isMobile ? 'auto' : 'auto'};
         font-weight: 500;
+        text-align: center;
     `;
     
     document.body.appendChild(notification);
     
     // Remove after 4 seconds
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease';
+        notification.style.animation = `${isMobile ? 'slideOutUp' : 'slideOutRight'} 0.3s ease`;
         setTimeout(() => {
             notification.remove();
         }, 300);
@@ -261,6 +308,28 @@ style.textContent = `
             opacity: 0;
         }
     }
+    
+    @keyframes slideInDown {
+        from {
+            transform: translateX(-50%) translateY(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutUp {
+        from {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(-50%) translateY(-100%);
+            opacity: 0;
+        }
+    }
 `;
 document.head.appendChild(style);
 
@@ -272,6 +341,7 @@ document.head.appendChild(style);
 const scrollToTopBtn = document.createElement('button');
 scrollToTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
 scrollToTopBtn.className = 'scroll-to-top';
+scrollToTopBtn.setAttribute('aria-label', 'Scroll to top');
 scrollToTopBtn.style.cssText = `
     position: fixed;
     bottom: 30px;
@@ -290,6 +360,7 @@ scrollToTopBtn.style.cssText = `
     z-index: 999;
     transition: all 0.3s ease;
     font-size: 1.2rem;
+    -webkit-tap-highlight-color: transparent;
 `;
 
 document.body.appendChild(scrollToTopBtn);
